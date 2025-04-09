@@ -72,43 +72,10 @@
     <input type="number" id="precio" step="0.01" placeholder="Precio S/.">
     <input type="text" id="seccion" placeholder="Sección (ej. Licores)">
     <button onclick="agregarProducto()">Agregar Producto</button>
-    <button onclick="registrarVenta()">Registrar Venta</button>
   </div>
 
-  <table id="tabla">
-    <thead>
-      <tr>
-        <th>Producto</th>
-        <th>Cantidad</th>
-        <th>Precio</th>
-        <th>Sección</th>
-      </tr>
-    </thead>
-    <tbody></tbody>
-  </table>
-
   <script>
-    const API_URL = ""; // URL de tu API de Google Apps Scripthttps://script.google.com/macros/s/AKfycbwv8ANW6jEJWqEwMxwpETw-LZK8_l9B3mkeA-RlhX-31Q7fdSXkHps-gken5YLDJyM6Ig/exec
-
-    function cargarInventario() {
-      fetch(API_URL)
-        .then(res => res.json())
-        .then(data => {
-          const tbody = document.querySelector("#tabla tbody");
-          tbody.innerHTML = "";
-          data.slice(1).forEach(row => {
-            const [nombre, cantidad, precio, seccion] = row;
-            tbody.innerHTML += `
-              <tr>
-                <td>${nombre}</td>
-                <td>${cantidad}</td>
-                <td>S/. ${Number(precio).toFixed(2)}</td>
-                <td>${seccion}</td>
-              </tr>
-            `;
-          });
-        });
-    }
+    const API_URL = "https://script.google.com/macros/s/AKfycbzvlqK49skTcrWHd871X9Ljgv-g5zuHZ7K_JAhOqKCh3OaBBgDgq2UIpekJj3wN6vQ/exec"; // URL de tu Web App
 
     function agregarProducto() {
       const nombre = document.getElementById("nombre").value.trim();
@@ -128,41 +95,13 @@
       .then(() => {
         alert("Producto agregado correctamente.");
         limpiarInputs(["nombre", "cantidad", "precio", "seccion"]);
-        cargarInventario();
       })
       .catch(err => alert("Error: " + err));
-    }
-
-    function registrarVenta() {
-      const nombre = document.getElementById("nombre").value.trim();
-      const cantidad = parseInt(document.getElementById("cantidad").value);
-
-      if (!nombre || isNaN(cantidad)) {
-        return alert("Ingresa nombre y cantidad a vender.");
-      }
-
-      fetch(API_URL, {
-        method: "POST",
-        body: JSON.stringify({ nombre, cantidad, tipo: "venta" }),
-        headers: { "Content-Type": "application/json" }
-      })
-      .then(res => res.text())
-      .then(resp => {
-        if (resp === "OK") {
-          alert("Venta registrada.");
-          limpiarInputs(["nombre", "cantidad"]);
-          cargarInventario();
-        } else {
-          alert("Error: " + resp);
-        }
-      });
     }
 
     function limpiarInputs(ids) {
       ids.forEach(id => document.getElementById(id).value = "");
     }
-
-    cargarInventario(); // Carga el inventario al abrir la página
   </script>
 </body>
 </html>
