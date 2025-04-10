@@ -1,186 +1,105 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <title>Inventario - Licorería</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Inventario Licorería</title>
   <style>
-    body {
-      font-family: sans-serif;
-      background: #f3f3f3;
-      padding: 20px;
-    }
-    h1, h2 {
-      color: #2c3e50;
-    }
-    form, .panel {
-      background: white;
-      padding: 20px;
-      margin-bottom: 30px;
-      border-radius: 10px;
-      box-shadow: 0 0 5px rgba(0,0,0,0.1);
-      max-width: 600px;
-    }
-    label {
-      display: block;
-      margin-top: 10px;
-      font-weight: bold;
-    }
-    input, select {
-      width: 100%;
-      padding: 8px;
-      margin-top: 5px;
-    }
-    button {
-      margin-top: 15px;
-      padding: 10px 15px;
-      background: #27ae60;
-      color: white;
-      border: none;
-      border-radius: 5px;
-      cursor: pointer;
-    }
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 10px;
-    }
-    th, td {
-      border: 1px solid #ddd;
-      padding: 6px;
-      text-align: center;
-    }
-    th {
-      background: #34495e;
-      color: white;
-    }
-    .low-stock {
-      background: #f9c9c9;
-    }
+    body { font-family: sans-serif; background: #f0f0f0; padding: 20px; }
+    .card { background: white; border-radius: 8px; padding: 20px; margin-bottom: 20px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+    h2 { margin-top: 0; color: #2c3e50; }
+    table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+    th, td { border: 1px solid #ccc; padding: 8px; text-align: center; }
+    th { background: #34495e; color: white; }
+    input, select, button { padding: 10px; margin: 5px; }
   </style>
 </head>
 <body>
 
-  <h1>Inventario - Licorería</h1>
-
-  <form id="formulario">
+  <div class="card">
     <h2>Registrar Movimiento</h2>
-    <label for="tipo">Tipo</label>
-    <select id="tipo" required>
-      <option value="Ingreso">Ingreso</option>
-      <option value="Venta">Venta</option>
-    </select>
+    <form id="formulario">
+      <select name="tipo" required>
+        <option value="">Tipo</option>
+        <option value="Ingreso">Ingreso</option>
+        <option value="Venta">Venta</option>
+      </select>
+      <input type="text" name="seccion" placeholder="Sección" required />
+      <input type="text" name="producto" placeholder="Producto" required />
+      <input type="number" name="cantidad" placeholder="Cantidad" required />
+      <input type="number" name="precio" placeholder="Precio unitario" step="0.01" required />
+      <button type="submit">Registrar</button>
+    </form>
+  </div>
 
-    <label for="seccion">Sección</label>
-    <input type="text" id="seccion" required>
-
-    <label for="producto">Producto</label>
-    <input type="text" id="producto" required>
-
-    <label for="cantidad">Cantidad</label>
-    <input type="number" id="cantidad" required>
-
-    <label for="precio">Precio por unidad</label>
-    <input type="number" id="precio" required step="0.01">
-
-    <button type="submit">Registrar</button>
-    <p id="mensaje" style="color:green;"></p>
-  </form>
-
-  <div class="panel">
+  <div class="card">
     <h2>Inventario Actual</h2>
-    <table id="tabla-inventario">
-      <thead>
-        <tr>
-          <th>Producto</th>
-          <th>Sección</th>
-          <th>Stock</th>
-        </tr>
-      </thead>
-      <tbody></tbody>
+    <table>
+      <thead><tr><th>Producto</th><th>Sección</th><th>Stock</th></tr></thead>
+      <tbody id="inventario"></tbody>
     </table>
   </div>
 
-  <div class="panel">
+  <div class="card">
     <h2>Productos con Bajo Stock</h2>
     <ul id="bajo-stock"></ul>
   </div>
 
-  <div class="panel">
+  <div class="card">
     <h2>Resumen Diario</h2>
     <p><strong>Ingresos:</strong> $<span id="ingresos">0</span></p>
     <p><strong>Egresos:</strong> $<span id="egresos">0</span></p>
   </div>
 
   <script>
-    const API_URL = https://script.google.com/macros/s/AKfycbz-vE92NGaGkrL0KQDxN6ODF6ZkZz3FtB77aVPL4K9lc0BfEOBAdOag59XfS3e3nXc/exec;
+    const API_URL = https://script.google.com/macros/s/AKfycbwmxJLB32oGNDYt-o78iUtmfTqGW8LdLPs3akVQ3R8jVJnDmVU-o1_9_zCKwfVLuys/exec;
 
-    document.getElementById("formulario").addEventListener("submit", function(e) {
+    document.getElementById("formulario").addEventListener("submit", async (e) => {
       e.preventDefault();
-
-      const data = {
-        tipo: document.getElementById("tipo").value,
-        seccion: document.getElementById("seccion").value,
-        producto: document.getElementById("producto").value,
-        cantidad: parseInt(document.getElementById("cantidad").value),
-        precio: parseFloat(document.getElementById("precio").value)
-      };
-
-      fetch(API_URL, {
+      const datos = Object.fromEntries(new FormData(e.target));
+      const res = await fetch(API_URL, {
         method: "POST",
-        mode: "no-cors",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data)
+        body: JSON.stringify(datos),
+        headers: { "Content-Type": "application/json" }
       });
-
-      document.getElementById("mensaje").textContent = "✔ Registro exitoso.";
-      document.getElementById("formulario").reset();
-      setTimeout(() => document.getElementById("mensaje").textContent = "", 3000);
+      const json = await res.json();
+      if (json.status === "ok") {
+        alert("Movimiento registrado correctamente");
+        e.target.reset();
+        cargarDatos();
+      }
     });
 
-    async function cargarInventario() {
-      try {
-        const res = await fetch(API_URL + "?verInventario=true");
-        const data = await res.json();
+    async function cargarDatos() {
+      const res = await fetch(API_URL);
+      const json = await res.json();
+      const inventario = json.inventario;
+      const movimientos = json.movimientos;
 
-        const tbody = document.querySelector("#tabla-inventario tbody");
-        const bajoStock = document.getElementById("bajo-stock");
-        const ingresos = document.getElementById("ingresos");
-        const egresos = document.getElementById("egresos");
+      const tabla = document.getElementById("inventario");
+      tabla.innerHTML = "";
+      const bajoStock = document.getElementById("bajo-stock");
+      bajoStock.innerHTML = "";
 
-        tbody.innerHTML = "";
-        bajoStock.innerHTML = "";
+      inventario.forEach(item => {
+        tabla.innerHTML += `<tr><td>${item.producto}</td><td>${item.seccion}</td><td>${item.stock}</td></tr>`;
+        if (item.stock <= 3) {
+          bajoStock.innerHTML += `<li>${item.producto} (${item.stock})</li>`;
+        }
+      });
 
-        let totalIngresos = 0;
-        let totalEgresos = 0;
+      let ingresos = 0;
+      let egresos = 0;
+      movimientos.forEach(m => {
+        if (m.tipo === "Ingreso") ingresos += m.total;
+        if (m.tipo === "Venta") egresos += m.total;
+      });
 
-        data.inventario.forEach(p => {
-          const row = document.createElement("tr");
-          row.innerHTML = `<td>${p.producto}</td><td>${p.seccion}</td><td>${p.stock}</td>`;
-          if (p.stock <= 3) row.classList.add("low-stock");
-          tbody.appendChild(row);
-
-          if (p.stock <= 3) {
-            const li = document.createElement("li");
-            li.textContent = `${p.producto} (${p.stock} unidades)`;
-            bajoStock.appendChild(li);
-          }
-        });
-
-        data.movimientos.forEach(m => {
-          const valor = parseFloat(m.total);
-          if (m.tipo === "Ingreso") totalIngresos += valor;
-          else if (m.tipo === "Venta") totalEgresos += valor;
-        });
-
-        ingresos.textContent = totalIngresos.toFixed(2);
-        egresos.textContent = totalEgresos.toFixed(2);
-      } catch (error) {
-        console.error("Error cargando inventario:", error);
-      }
+      document.getElementById("ingresos").textContent = ingresos.toFixed(2);
+      document.getElementById("egresos").textContent = egresos.toFixed(2);
     }
 
-    cargarInventario();
-    setInterval(cargarInventario, 10000); // Actualiza cada 10 segundos
+    cargarDatos();
   </script>
 </body>
 </html>
