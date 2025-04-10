@@ -1,107 +1,186 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Inventario Licorería</title>
+  <meta charset="UTF-8">
+  <title>Inventario - Licorería</title>
   <style>
     body {
-      font-family: Arial, sans-serif;
-      margin: 40px;
-      background-color: #f4f4f4;
-    }
-
-    h1 {
-      text-align: center;
-      color: #333;
-    }
-
-    .formulario {
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-      max-width: 400px;
-      margin: auto;
+      font-family: sans-serif;
+      background: #f3f3f3;
       padding: 20px;
-      background: #fff;
+    }
+    h1, h2 {
+      color: #2c3e50;
+    }
+    form, .panel {
+      background: white;
+      padding: 20px;
+      margin-bottom: 30px;
       border-radius: 10px;
-      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+      box-shadow: 0 0 5px rgba(0,0,0,0.1);
+      max-width: 600px;
     }
-
-    input, button {
-      padding: 10px;
-      border-radius: 5px;
-      border: 1px solid #ccc;
-      font-size: 16px;
+    label {
+      display: block;
+      margin-top: 10px;
+      font-weight: bold;
     }
-
+    input, select {
+      width: 100%;
+      padding: 8px;
+      margin-top: 5px;
+    }
     button {
-      background-color: #4CAF50;
+      margin-top: 15px;
+      padding: 10px 15px;
+      background: #27ae60;
       color: white;
+      border: none;
+      border-radius: 5px;
       cursor: pointer;
     }
-
     table {
       width: 100%;
-      margin-top: 30px;
       border-collapse: collapse;
+      margin-top: 10px;
     }
-
     th, td {
       border: 1px solid #ddd;
-      padding: 10px;
+      padding: 6px;
       text-align: center;
     }
-
     th {
-      background-color: #333;
+      background: #34495e;
       color: white;
     }
-
-    tr:nth-child(even) {
-      background-color: #f2f2f2;
+    .low-stock {
+      background: #f9c9c9;
     }
   </style>
 </head>
 <body>
-  <h1>Inventario de la Licorería</h1>
 
-  <div class="formulario">
-    <input type="text" id="nombre" placeholder="Nombre del producto">
-    <input type="number" id="cantidad" placeholder="Cantidad">
-    <input type="number" id="precio" step="0.01" placeholder="Precio S/.">
-    <input type="text" id="seccion" placeholder="Sección (ej. Licores)">
-    <button onclick="agregarProducto()">Agregar Producto</button>
+  <h1>Inventario - Licorería</h1>
+
+  <form id="formulario">
+    <h2>Registrar Movimiento</h2>
+    <label for="tipo">Tipo</label>
+    <select id="tipo" required>
+      <option value="Ingreso">Ingreso</option>
+      <option value="Venta">Venta</option>
+    </select>
+
+    <label for="seccion">Sección</label>
+    <input type="text" id="seccion" required>
+
+    <label for="producto">Producto</label>
+    <input type="text" id="producto" required>
+
+    <label for="cantidad">Cantidad</label>
+    <input type="number" id="cantidad" required>
+
+    <label for="precio">Precio por unidad</label>
+    <input type="number" id="precio" required step="0.01">
+
+    <button type="submit">Registrar</button>
+    <p id="mensaje" style="color:green;"></p>
+  </form>
+
+  <div class="panel">
+    <h2>Inventario Actual</h2>
+    <table id="tabla-inventario">
+      <thead>
+        <tr>
+          <th>Producto</th>
+          <th>Sección</th>
+          <th>Stock</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
+
+  <div class="panel">
+    <h2>Productos con Bajo Stock</h2>
+    <ul id="bajo-stock"></ul>
+  </div>
+
+  <div class="panel">
+    <h2>Resumen Diario</h2>
+    <p><strong>Ingresos:</strong> $<span id="ingresos">0</span></p>
+    <p><strong>Egresos:</strong> $<span id="egresos">0</span></p>
   </div>
 
   <script>
-    const API_URL = "https://script.google.com/macros/s/AKfycbzL_OzhqC82Zdoa1G6MH70GbJNrFy13m0ZuHAzuTRt1GYgqEgtyVbCptQTg2YSXEIyj/exec"; // URL de tu Web App
+    const API_URL = https://script.google.com/macros/s/AKfycbz-vE92NGaGkrL0KQDxN6ODF6ZkZz3FtB77aVPL4K9lc0BfEOBAdOag59XfS3e3nXc/exec;
 
-    function agregarProducto() {
-      const nombre = document.getElementById("nombre").value.trim();
-      const cantidad = parseInt(document.getElementById("cantidad").value);
-      const precio = parseFloat(document.getElementById("precio").value);
-      const seccion = document.getElementById("seccion").value.trim();
+    document.getElementById("formulario").addEventListener("submit", function(e) {
+      e.preventDefault();
 
-      if (!nombre || isNaN(cantidad) || isNaN(precio) || !seccion) {
-        return alert("Completa todos los campos.");
-      }
+      const data = {
+        tipo: document.getElementById("tipo").value,
+        seccion: document.getElementById("seccion").value,
+        producto: document.getElementById("producto").value,
+        cantidad: parseInt(document.getElementById("cantidad").value),
+        precio: parseFloat(document.getElementById("precio").value)
+      };
 
       fetch(API_URL, {
         method: "POST",
-        body: JSON.stringify({ nombre, cantidad, precio, seccion, tipo: "agregar" }),
-        headers: { "Content-Type": "application/json" }
-      })
-      .then(() => {
-        alert("Producto agregado correctamente.");
-        limpiarInputs(["nombre", "cantidad", "precio", "seccion"]);
-      })
-      .catch(err => alert("Error: " + err));
+        mode: "no-cors",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data)
+      });
+
+      document.getElementById("mensaje").textContent = "✔ Registro exitoso.";
+      document.getElementById("formulario").reset();
+      setTimeout(() => document.getElementById("mensaje").textContent = "", 3000);
+    });
+
+    async function cargarInventario() {
+      try {
+        const res = await fetch(API_URL + "?verInventario=true");
+        const data = await res.json();
+
+        const tbody = document.querySelector("#tabla-inventario tbody");
+        const bajoStock = document.getElementById("bajo-stock");
+        const ingresos = document.getElementById("ingresos");
+        const egresos = document.getElementById("egresos");
+
+        tbody.innerHTML = "";
+        bajoStock.innerHTML = "";
+
+        let totalIngresos = 0;
+        let totalEgresos = 0;
+
+        data.inventario.forEach(p => {
+          const row = document.createElement("tr");
+          row.innerHTML = `<td>${p.producto}</td><td>${p.seccion}</td><td>${p.stock}</td>`;
+          if (p.stock <= 3) row.classList.add("low-stock");
+          tbody.appendChild(row);
+
+          if (p.stock <= 3) {
+            const li = document.createElement("li");
+            li.textContent = `${p.producto} (${p.stock} unidades)`;
+            bajoStock.appendChild(li);
+          }
+        });
+
+        data.movimientos.forEach(m => {
+          const valor = parseFloat(m.total);
+          if (m.tipo === "Ingreso") totalIngresos += valor;
+          else if (m.tipo === "Venta") totalEgresos += valor;
+        });
+
+        ingresos.textContent = totalIngresos.toFixed(2);
+        egresos.textContent = totalEgresos.toFixed(2);
+      } catch (error) {
+        console.error("Error cargando inventario:", error);
+      }
     }
 
-    function limpiarInputs(ids) {
-      ids.forEach(id => document.getElementById(id).value = "");
-    }
+    cargarInventario();
+    setInterval(cargarInventario, 10000); // Actualiza cada 10 segundos
   </script>
 </body>
 </html>
