@@ -142,12 +142,16 @@
       precio: parseFloat(formulario.precio.value)
     };
 
+    console.log("Datos a enviar:", datos); // Muestra los datos que se envían
+
     try {
       const res = await fetch(webAppUrl, {
         method: "POST",
         body: JSON.stringify(datos),
         headers: { "Content-Type": "application/json" }
       });
+
+      console.log("Respuesta del servidor:", res); // Muestra la respuesta del servidor
 
       if (res.ok) {
         mensajeExito.textContent = "✅ Registro exitoso";
@@ -159,7 +163,7 @@
         mensajeExito.textContent = "❌ Error al enviar los datos.";
       }
     } catch (error) {
-      console.error(error);
+      console.error("Error:", error); // Muestra el error en la consola
       mensajeExito.textContent = "❌ No se pudo conectar al servidor.";
     }
   });
@@ -203,7 +207,7 @@
   document.getElementById("exportButton").addEventListener("click", () => {
     const rows = Array.from(tabla.querySelectorAll("tr"));
     let csvContent = "data:text/csv;charset=utf-8," 
-      + rows.map(e => Array.from(e.querySelectorAll("td, th")).map(cell => cell.innerText).join(",")).join("\n");
+      + rows.map(e => Array.from(e.querySelectorAll("td, th")).map(cell => cell.innerText).join(",")).join("\\n");
 
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement("a");
