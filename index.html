@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Registro Licorería</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f2f2f2;
+      padding: 20px;
+    }
+    form, table {
+      background: #fff;
+      padding: 20px;
+      max-width: 600px;
+      margin: auto;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+    input, select, button {
+      width: 100%;
+      padding: 10px;
+      margin-top: 10px;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+    }
+    button {
+      background-color: #28a745;
+      color: white;
+      border: none;
+    }
+    button:hover {
+      background-color: #218838;
+    }
+    .success {
+      color: green;
+      text-align: center;
+      margin-top: 10px;
+    }
+    #totalField {
+      font-weight: bold;
+      color: #333;
+      margin-top: 10px;
+      text-align: center;
+    }
+    table {
+      margin-top: 30px;
+      width: 100%;
+      border-collapse: collapse;
+    }
+    th, td {
+      padding: 10px;
+      border: 1px solid #ddd;
+      text-align: center;
+    }
+    th {
+      background: #eee;
+    }
+    #searchField {
+      margin: 20px 0;
+    }
+  </style>
+</head>
+<body>
+
+<h2 style="text-align:center;">Registro de Productos</h2>
+
+<div id="searchField">
+  <input type="text" id="searchInput" placeholder="Buscar producto..." />
+</div>
+
+<form id="registroForm">
+  <select name="tipoMovimiento" required>
+    <option value="">Tipo de Movimiento</option>
+    <option value="Venta">Venta</option>
+    <option value="Ingreso">Ingreso</option>
+  </select>
+
+  <select name="seccion" required>
+    <option value="">Sección</option>
+    <option value="Tragos">Tragos</option>
+    <option value="Golosinas">Golosinas</option>
+    <option value="Cigarros">Cigarros</option>
+    <option value="Otros">Otros</option>
+  </select>
+
+  <input type="text" name="producto" placeholder="Nombre del producto" required />
+  <input type="number" name="cantidad" id="cantidad" placeholder="Cantidad" min="1" required />
+  <input type="number" name="precio" id="precio" placeholder="Precio por unidad" min="0" step="0.01" required />
+
+  <div id="totalField">Total: $0.00</div>
+
+  <button type="submit">Registrar</button>
+  <div class="success" id="mensajeExito"></div>
+</form>
+
+<!-- Tabla de registros -->
+<table id="tablaRegistros">
+  <thead>
+    <tr>
+      <th>Fecha</th>
+      <th>Tipo</th>
+      <th>Sección</th>
+      <th>Producto</th>
+      <th>Cantidad</th>
+      <th>Precio</th>
+      <th>Total</th>
+    </tr>
+  </thead>
+  <tbody></tbody>
+</table>
+
+<button id="exportButton">Exportar a CSV</button>
+
+<script>
+  const formulario = document.getElementById("registroForm");
+  const mensajeExito = document.getElementById("mensajeExito");
+  const totalField = document.getElementById("totalField");
+  const tabla = document.querySelector("#tablaRegistros tbody");
+  const searchInput = document.getElementById("searchInput");
+
+  const webAppUrl = "https://script.google.com/macros/s/AKfycbzJNksWIbhRbaCPR_mTtFOVGlEFp_H6k1BGGEMHrRFzY0V-R4CDyhTnyAXg73hRJ1sE/exec"; // <-- Pega tu URL aquí
+
+  function actualizarTotal() {
+    const cantidad = parseFloat(document.getElementById("cantidad").value) || 0;
+    const precio = parseFloat(document.getElementById("precio").value) || 0;
+    const total = cantidad * precio;
+    totalField.textContent = `Total: $${total.toFixed(2)}`;
+  }
+
+  document.getElementById("cantidad").addEventListener("input", actualizarTotal);
+  document.getElementById("precio").addEventListener("input", actualizarTotal);
+
+  formulario.addEventListener("submit", async (e) => {
+    e.preventDefault();
+
+    const datos = {
+      tipoMovimiento: formulario.tipoMovimiento.value,
+      seccion: formulario.seccion.value,
+      producto: formulario.producto.value,
+      cantidad: parseFloat(formulario.cantidad.value),
+      precio: parseFloat(formulario.precio.value)
+    };
+
+    try {
+      const res = await fetch(webAppUrl, {
+        method: "POST",
+        body: JSON.stringify(datos),
+        headers: { "Content-Type": "application/json" }
+      });
+
+      if (res.ok) {
+        mensajeExito.textContent = "✅ Registro exitoso";
+        formulario.reset();
+        totalField.textContent = "Total: $0.00";
+        cargarRegistros();
+        setTimeout(() => mensajeExito.textContent = "", 3000);
+      } else {
+        mensajeExito.textContent = "❌ Error al enviar los datos.";
+      }
+    } catch (error) {
+      console.error(error);
+      mensajeExito.textContent = "❌ No se pudo conectar al servidor.";
+    }
+  });
+
+  async function cargarRegistros() {
+    try {
+      const res = await fetch(webAppUrl);
+      const registros = await res.json();
+
+      tabla.innerHTML = "";
+      registros.reverse().forEach(reg => {
+        const fila = document.createElement("tr");
+        fila.innerHTML = `
+          <td>${new Date(reg.fecha).toLocaleString()}</td>
+          <td>${reg.tipoMovimiento}</td>
+          <td>${reg.seccion}</td>
+          <td>${reg.producto}</td>
+          <td>${reg.cantidad}</td>
+          <td>$${parseFloat(reg.precio).toFixed(2)}</td>
+          <td>$${parseFloat(reg.total).toFixed(2)}</td>
+        `;
+        tabla.appendChild(fila);
+      });
+      filtrarRegistros();
+    } catch (error) {
+      console.error("Error al cargar registros:", error);
+    }
+  }
+
+  function filtrarRegistros() {
+    const valorBusqueda = searchInput.value.toLowerCase();
+    const filas = tabla.querySelectorAll("tr");
+    filas.forEach(fila => {
+      const producto = fila.cells[3].textContent.toLowerCase();
+      fila.style.display = producto.includes(valorBusqueda) ? "" : "none";
+    });
+  }
+
+  searchInput.addEventListener("input", filtrarRegistros);
+
+  document.getElementById("exportButton").addEventListener("click", () => {
+    const rows = Array.from(tabla.querySelectorAll("tr"));
+    let csvContent = "data:text/csv;charset=utf-8," 
+      + rows.map(e => Array.from(e.querySelectorAll("td, th")).map(cell => cell.innerText).join(",")).join("\n");
+
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", "registros_licoreria.csv");
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  });
+
+  window.addEventListener("load", cargarRegistros);
+</script>
+
+</body>
+</html>
